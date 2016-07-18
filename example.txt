@@ -1,0 +1,60 @@
+
+package main
+
+import (
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/mattn/go-sqlite3"
+)
+
+type Place struct {
+	Id     int
+	Name   string
+	Town   Town
+	TownId int //Foregin key
+}
+
+type Town struct {
+	Id   int
+	Name string
+}
+
+func main() {
+	db, _ := gorm.Open("sqlite3", "./data.db")
+	defer db.Close()
+
+	db.CreateTable(&Place{})
+	db.CreateTable(&Town{})
+	t := Town{
+		Name: "TestTown",
+	}
+
+	p1 := Place{
+		Name:   "Test",
+		TownId: 1,
+	}
+
+	p2 := Place{
+		Name:   "Test2",
+		TownId: 1,
+	}
+
+	err := db.Save(&t).Error
+	err = db.Save(&p1).Error
+	err = db.Save(&p2).Error
+	if err != nil {
+		panic(err)
+	}
+
+	places := []Place{}
+	err = db.Find(&places).Error
+	for i, _ := range places {
+		db.Model(places[i]).Related(&places[i].Town)
+	}
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println(places)
+	}
+}
